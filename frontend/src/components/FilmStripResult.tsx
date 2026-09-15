@@ -58,7 +58,7 @@ export default function FilmStripResult({ photos, filter, onRetake }: Props) {
       <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
         <a
           href={stripUrl ?? undefined}
-          download={`four-bits-photo-strip-${filter}.png`}
+          download={`filmin-photo-strip-${filter}.png`}
           aria-disabled={!stripUrl}
           className="font-type text-paper bg-teal hover:bg-teal-dark border-2 border-walnut rounded-full px-8 py-3 shadow-ticket active:translate-y-1 active:shadow-none transition"
         >

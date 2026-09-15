@@ -26,9 +26,6 @@ export function useCamera(active: boolean) {
           return
         }
         streamRef.current = stream
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-        }
         setStatus('ready')
       })
       .catch(() => {
@@ -41,6 +38,15 @@ export function useCamera(active: boolean) {
       streamRef.current = null
     }
   }, [active])
+
+  useEffect(() => {
+    if (status !== 'ready') return
+    const video = videoRef.current
+    const stream = streamRef.current
+    if (video && stream && video.srcObject !== stream) {
+      video.srcObject = stream
+    }
+  }, [status])
 
   return { videoRef, status }
 }
