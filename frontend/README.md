@@ -1,4 +1,4 @@
-# Four Bits Photo Co. — Vintage Photobooth
+# Filmin — Vintage Photobooth
 
 A browser-based vintage photobooth: pull the curtain, pose for a 3-2-1 countdown four times,
 and walk away with a classic 4-frame film strip rendered as a transparent-background PNG

@@ -142,7 +142,7 @@ export async function composeStrip(photos: string[], filter: FilterType): Promis
   ctx.fillStyle = ink
   ctx.font = '20px "Abril Fatface", serif'
   ctx.textAlign = 'center'
-  ctx.fillText('Four Bits Photo Co.', stripW / 2, stripH - footerH + 30)
+  ctx.fillText('Filmin', stripW / 2, stripH - footerH + 30)
   ctx.font = '11px "Special Elite", monospace'
   ctx.fillStyle = ink
   ctx.globalAlpha = 0.75

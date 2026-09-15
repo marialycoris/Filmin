@@ -15,7 +15,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col items-center px-4 py-10 sm:py-16">
       <header className="w-full max-w-4xl flex items-center justify-between mb-8">
         <span className="font-type text-xs tracking-wide text-walnut/70">est. this afternoon</span>
-        <span className="font-display text-lg text-curtain">Four Bits Photo Co.</span>
+        <span className="font-display text-lg text-curtain">Filmin</span>
       </header>
 
       <main className="w-full flex-1 flex flex-col items-center justify-center">
