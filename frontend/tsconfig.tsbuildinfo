@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/components/CameraStage.tsx","./src/components/FilmStripResult.tsx","./src/components/PhotoboothIllustration.tsx","./src/hooks/useCamera.ts","./src/utils/imaging.ts"],"version":"5.9.3"}
