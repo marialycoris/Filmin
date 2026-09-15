@@ -117,7 +117,7 @@ export default function CameraStage({ filter, onComplete, onCancel }: Props) {
         </div>
       </div>
 
-      <div className="mt-6 flex items-center gap-4">
+      <div className="mt-6 flex flex-col items-center gap-3">
         {!running && (
           <button
             onClick={runSession}
@@ -133,9 +133,9 @@ export default function CameraStage({ filter, onComplete, onCancel }: Props) {
         <button
           onClick={onCancel}
           disabled={running}
-          className="font-type text-walnut/70 underline decoration-dotted underline-offset-4 text-sm disabled:opacity-30"
+          className="font-type text-paper bg-walnut hover:bg-teal-dark border-2 border-teal rounded-full px-8 py-3 shadow-ticket active:translate-y-1 active:shadow-none transition"
         >
-          back out
+          go back out
         </button>
       </div>
     </div>
