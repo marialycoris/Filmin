@@ -76,44 +76,53 @@ function roundRectPath(
 
 /**
  * Composes the 4 captured frames into a classic hanging film-strip.
- * The canvas background stays fully transparent; only the strip body
- * (paper + photos + sprocket holes) is opaque, so the exported PNG can be
- * dropped anywhere and used as a sticker.
+ * Output is a fixed 1080x1920 (9:16) PNG. The canvas background stays
+ * fully transparent; only the strip body (paper + photos + sprocket
+ * holes) is opaque, so the exported PNG can be dropped anywhere and
+ * used as a sticker.
  */
 export async function composeStrip(photos: string[], filter: FilterType): Promise<string> {
   const images = await Promise.all(photos.map(loadImage))
 
-  const pad = 22
-  const gap = 16
-  const photoW = FRAME_W * 0.62
-  const photoH = FRAME_H * 0.62
-  const holeCol = 34
-  const stripW = holeCol * 2 + photoW + pad * 2
-  const footerH = 70
-  const stripH = pad * 2 + photoH * 4 + gap * 3 + footerH
+  const W = 1080
+  const H = 1920
+
+  const padX = 44
+  const padY = 40
+  const gap = 24
+  const photoW = 525
+  const photoH = 400
+  const holeCol = 104
+  const footerH = 168
+
+  const bodyW = padX * 2 + holeCol * 2 + photoW
+  const bodyH = padY * 2 + photoH * 4 + gap * 3 + footerH
+  const bodyX = Math.round((W - bodyW) / 2)
 
   const canvas = document.createElement('canvas')
-  canvas.width = stripW
-  canvas.height = stripH
+  canvas.width = W
+  canvas.height = H
   const ctx = canvas.getContext('2d')!
-  ctx.clearRect(0, 0, stripW, stripH)
+  ctx.clearRect(0, 0, W, H)
 
   // strip body (paper or near-black, depending on filter mood)
   const paper = filter === 'sepia' ? '#F0E2C4' : '#EDEDED'
   const ink = filter === 'sepia' ? '#3B2A20' : '#1C1712'
-  roundRectPath(ctx, 0, 0, stripW, stripH, 22)
+  roundRectPath(ctx, bodyX, 0, bodyW, bodyH, 48)
   ctx.fillStyle = paper
   ctx.fill()
-  ctx.lineWidth = 4
+  ctx.lineWidth = 8
   ctx.strokeStyle = ink
   ctx.stroke()
 
   // sprocket holes down both sides
-  const holeR = 6
-  const holeSpacing = 30
+  const holeR = 12
+  const holeSpacing = 44
+  const leftCx = bodyX + padX + holeCol / 2
+  const rightCx = bodyX + padX + holeCol + photoW + holeCol / 2
   for (let side = 0; side < 2; side++) {
-    const cx = side === 0 ? holeCol / 2 + 2 : stripW - holeCol / 2 - 2
-    for (let y = 24; y < stripH - footerH + 10; y += holeSpacing) {
+    const cx = side === 0 ? leftCx : rightCx
+    for (let y = 56; y < bodyH - footerH + 20; y += holeSpacing) {
       ctx.beginPath()
       ctx.arc(cx, y, holeR, 0, Math.PI * 2)
       ctx.fillStyle = 'rgba(0,0,0,0)'
@@ -125,25 +134,25 @@ export async function composeStrip(photos: string[], filter: FilterType): Promis
 
   // photos
   images.forEach((img, i) => {
-    const x = holeCol + pad - 6
-    const y = pad + i * (photoH + gap)
+    const x = bodyX + padX + holeCol
+    const y = padY + i * (photoH + gap)
     ctx.save()
-    roundRectPath(ctx, x, y, photoW, photoH, 6)
+    roundRectPath(ctx, x, y, photoW, photoH, 14)
     ctx.clip()
     ctx.drawImage(img, x, y, photoW, photoH)
     ctx.restore()
-    ctx.lineWidth = 2
+    ctx.lineWidth = 5
     ctx.strokeStyle = ink
-    roundRectPath(ctx, x, y, photoW, photoH, 6)
+    roundRectPath(ctx, x, y, photoW, photoH, 14)
     ctx.stroke()
   })
 
   // footer caption
   ctx.fillStyle = ink
-  ctx.font = '20px "Abril Fatface", serif'
+  ctx.font = '56px "Abril Fatface", serif'
   ctx.textAlign = 'center'
-  ctx.fillText('Filmin', stripW / 2, stripH - footerH + 30)
-  ctx.font = '11px "Special Elite", monospace'
+  ctx.fillText('Filmin', W / 2, bodyH - footerH + 62)
+  ctx.font = '28px "Special Elite", monospace'
   ctx.fillStyle = ink
   ctx.globalAlpha = 0.75
   const dateStr = new Date().toLocaleDateString(undefined, {
@@ -151,7 +160,7 @@ export async function composeStrip(photos: string[], filter: FilterType): Promis
     month: 'short',
     day: 'numeric',
   })
-  ctx.fillText(`${filter === 'sepia' ? 'SEPIA STRIP' : 'B&W STRIP'} · ${dateStr}`, stripW / 2, stripH - footerH + 50)
+  ctx.fillText(`${filter === 'sepia' ? 'SEPIA STRIP' : 'B&W STRIP'} · ${dateStr}`, W / 2, bodyH - footerH + 112)
   ctx.globalAlpha = 1
 
   return canvas.toDataURL('image/png')
