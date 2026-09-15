@@ -50,7 +50,7 @@ export default function App() {
         )}
       </main>
 
-      <footer className="mt-16 font-type text-[11px] text-walnut/50 text-center max-w-sm">
+      <footer className="mt-16 font-type text-[11px] text-walnut/100 text-center max-w-sm">
         nothing you shoot here is saved anywhere — it lives in this tab only, until you download it or close the
         page.
       </footer>
@@ -104,7 +104,7 @@ function LandingScreen({
         pull the curtain
       </button>
 
-      <p className="font-type text-[11px] text-walnut/50 mt-4">
+      <p className="font-type text-[11px] text-walnut/100 mt-4">
         uses your camera for this session only — nothing is uploaded or stored.
       </p>
     </div>

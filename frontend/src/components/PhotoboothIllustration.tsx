@@ -50,7 +50,6 @@ export default function PhotoboothIllustration({ className, lit = true }: Props)
         fill="#7C2D2D"
         letterSpacing="2"
       >
-        PHOTOS
       </text>
 
       {/* marquee bulbs */}
