@@ -1,13 +1,25 @@
-export type FilterType = 'sepia' | 'bw'
+export type FilterType = 'sepia' | 'bw' | 'kodachrome' | 'faded'
 
 export const FRAME_W = 360
 export const FRAME_H = 360
 
+const FILTER_CSS: Record<FilterType, string> = {
+  sepia: 'sepia(0.75) saturate(1.3) contrast(1.08) brightness(1.02) hue-rotate(-6deg)',
+  bw: 'grayscale(1) contrast(1.25) brightness(1.03)',
+  kodachrome: 'saturate(1.6) contrast(1.08) sepia(0.2) brightness(0.98) hue-rotate(-12deg)',
+  faded: 'sepia(0.3) saturate(0.85) contrast(0.92) brightness(1.08)',
+}
+
+const FILTER_LABEL: Record<FilterType, string> = {
+  sepia: 'SEPIA',
+  bw: 'B&W',
+  kodachrome: 'KODACHROME',
+  faded: 'FADED',
+}
+
 /** CSS/canvas filter string for the chosen vintage look. */
 export function filterCss(filter: FilterType): string {
-  return filter === 'sepia'
-    ? 'sepia(0.75) saturate(1.3) contrast(1.08) brightness(1.02) hue-rotate(-6deg)'
-    : 'grayscale(1) contrast(1.25) brightness(1.03)'
+  return FILTER_CSS[filter]
 }
 
 /**
@@ -45,6 +57,10 @@ export function capturePhoto(video: HTMLVideoElement, filter: FilterType): strin
   ctx.scale(-1, 1)
   ctx.drawImage(video, sx, sy, sw, sh, 0, 0, FRAME_W, FRAME_H)
 
+  if (filter === 'faded') {
+    applyGrain(ctx, FRAME_W, FRAME_H, 22)
+  }
+
   return canvas.toDataURL('image/png')
 }
 
@@ -55,6 +71,28 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = reject
     img.src = src
   })
+}
+
+/** Thin monochrome film grain, drawn only over existing opaque pixels. */
+function applyGrain(ctx: CanvasRenderingContext2D, w: number, h: number, alpha: number) {
+  const grain = document.createElement('canvas')
+  grain.width = w
+  grain.height = h
+  const gctx = grain.getContext('2d')!
+  const image = gctx.createImageData(w, h)
+  const data = image.data
+  for (let i = 0; i < data.length; i += 4) {
+    const v = Math.random() * 255
+    data[i] = v
+    data[i + 1] = v
+    data[i + 2] = v
+    data[i + 3] = alpha
+  }
+  gctx.putImageData(image, 0, 0)
+  ctx.save()
+  ctx.globalCompositeOperation = 'source-atop'
+  ctx.drawImage(grain, 0, 0)
+  ctx.restore()
 }
 
 function roundRectPath(
@@ -194,7 +232,7 @@ export async function composeStrip(photos: string[], filter: FilterType): Promis
     month: 'short',
     day: 'numeric',
   })
-  ctx.fillText(`${filter === 'sepia' ? 'SEPIA' : 'B&W'} \u00b7 ${dateStr}`, stripW / 2, stripH - 14)
+  ctx.fillText(`${FILTER_LABEL[filter]} \u00b7 ${dateStr}`, stripW / 2, stripH - 14)
   ctx.globalAlpha = 1
 
   return canvas.toDataURL('image/png')

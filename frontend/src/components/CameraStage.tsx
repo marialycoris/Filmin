@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCamera } from '../hooks/useCamera'
-import { capturePhoto, FilterType } from '../utils/imaging'
+import { capturePhoto, filterCss, FilterType } from '../utils/imaging'
 
 interface Props {
   filter: FilterType
@@ -73,10 +73,7 @@ export default function CameraStage({ filter, onComplete, onCancel }: Props) {
               className="w-full h-full object-cover"
               style={{
                 transform: 'scaleX(-1)',
-                filter:
-                  filter === 'sepia'
-                    ? 'sepia(0.75) saturate(1.3) contrast(1.08) brightness(1.02) hue-rotate(-6deg)'
-                    : 'grayscale(1) contrast(1.25) brightness(1.03)',
+                filter: filterCss(filter),
               }}
             />
           )}

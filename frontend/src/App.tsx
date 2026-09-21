@@ -81,7 +81,7 @@ function LandingScreen({
 
       <div className="mt-8 w-full">
         <p className="font-type text-xs uppercase tracking-widest text-walnut/60 mb-3">choose your finish</p>
-        <div className="flex gap-3 justify-center">
+        <div className="flex flex-wrap gap-2 justify-center sm:gap-3">
           <FilterTicket
             label="sepia"
             active={filter === 'sepia'}
@@ -89,10 +89,22 @@ function LandingScreen({
             swatchClass="bg-mustard"
           />
           <FilterTicket
-            label="black & white"
+            label="b&w"
             active={filter === 'bw'}
             onClick={() => onFilterChange('bw')}
             swatchClass="bg-walnut"
+          />
+          <FilterTicket
+            label="kodachrome"
+            active={filter === 'kodachrome'}
+            onClick={() => onFilterChange('kodachrome')}
+            swatchClass="bg-curtain"
+          />
+          <FilterTicket
+            label="faded"
+            active={filter === 'faded'}
+            onClick={() => onFilterChange('faded')}
+            swatchClass="bg-paper"
           />
         </div>
       </div>
@@ -125,7 +137,7 @@ function FilterTicket({
   return (
     <button
       onClick={onClick}
-      className={`font-type text-sm flex items-center gap-2 border-2 rounded-full px-5 py-2 transition ${
+      className={`font-type text-sm flex items-center gap-2 border-2 rounded-full px-3 py-2 transition sm:px-5 ${
         active
           ? 'border-walnut bg-paper-light text-walnut shadow-ticket -translate-y-0.5'
           : 'border-walnut/30 text-walnut/60 hover:border-walnut/60'
