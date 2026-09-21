@@ -1,7 +1,7 @@
 export type FilterType = 'sepia' | 'bw'
 
-export const FRAME_W = 420
-export const FRAME_H = 320
+export const FRAME_W = 360
+export const FRAME_H = 360
 
 /** CSS/canvas filter string for the chosen vintage look. */
 export function filterCss(filter: FilterType): string {
@@ -74,93 +74,127 @@ function roundRectPath(
   ctx.closePath()
 }
 
+/** Punches a transparent rounded-rect "hole" out of whatever has been drawn so far. */
+function punchRoundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  ctx.save()
+  ctx.globalCompositeOperation = 'destination-out'
+  roundRectPath(ctx, x, y, w, h, r)
+  ctx.fill()
+  ctx.restore()
+}
+
 /**
- * Composes the 4 captured frames into a classic hanging film-strip.
- * Output is a fixed 1080x1920 (9:16) PNG. The canvas background stays
- * fully transparent; only the strip body (paper + photos + sprocket
- * holes) is opaque, so the exported PNG can be dropped anywhere and
- * used as a sticker.
+ * Composes the 4 captured frames into an authentic 35mm-style filmstrip:
+ * a dark film body, continuous sprocket-hole perforations running the full
+ * length of both edges, square photo windows, and rotated frame numbers in
+ * the gutters. The canvas background stays fully transparent outside the
+ * film body — and the sprocket holes themselves are punched fully
+ * transparent too — so the exported PNG can be dropped on any background.
  */
 export async function composeStrip(photos: string[], filter: FilterType): Promise<string> {
   const images = await Promise.all(photos.map(loadImage))
 
-  const W = 1080
-  const H = 1920
+  const FRAME_COUNT = images.length
 
-  const padX = 44
-  const padY = 40
-  const gap = 24
-  const photoW = 525
-  const photoH = 400
-  const holeCol = 104
-  const footerH = 168
+  // layout constants (all in canvas px)
+  const photoSize = 340 // square photo window
+  const sideGutter = 92 // width of each side column (holes + number label)
+  const holeEdgeInset = 30 // distance from strip edge to hole center
+  const holeW = 34
+  const holeH = 42
+  const holeRadius = 9
+  const holePitch = 58 // vertical spacing between hole centers
+  const barTop = 26 // black bar above the first frame
+  const barBetween = 22 // black bar between frames
+  const barBottom = 58 // taller leader/tail bar at the bottom for the stamp
+  const cornerRadius = 10
 
-  const bodyW = padX * 2 + holeCol * 2 + photoW
-  const bodyH = padY * 2 + photoH * 4 + gap * 3 + footerH
-  const bodyX = Math.round((W - bodyW) / 2)
+  const stripW = sideGutter * 2 + photoSize
+  const framesTotalH = photoSize * FRAME_COUNT
+  const betweenBarsH = barBetween * (FRAME_COUNT - 1)
+  const stripH = barTop + framesTotalH + betweenBarsH + barBottom
 
   const canvas = document.createElement('canvas')
-  canvas.width = W
-  canvas.height = H
+  canvas.width = stripW
+  canvas.height = stripH
   const ctx = canvas.getContext('2d')!
-  ctx.clearRect(0, 0, W, H)
+  ctx.clearRect(0, 0, stripW, stripH)
 
-  // strip body (paper or near-black, depending on filter mood)
-  const paper = filter === 'sepia' ? '#F0E2C4' : '#EDEDED'
-  const ink = filter === 'sepia' ? '#3B2A20' : '#1C1712'
-  roundRectPath(ctx, bodyX, 0, bodyW, bodyH, 48)
-  ctx.fillStyle = paper
+  const filmColor = '#211812' // dark, near-black walnut — the physical "film" itself
+  const numberColor = '#D9A441' // mustard, matching the site's marquee-bulb accent
+
+  // film body
+  roundRectPath(ctx, 0, 0, stripW, stripH, cornerRadius)
+  ctx.fillStyle = filmColor
   ctx.fill()
-  ctx.lineWidth = 8
-  ctx.strokeStyle = ink
-  ctx.stroke()
 
-  // sprocket holes down both sides
-  const holeR = 12
-  const holeSpacing = 44
-  const leftCx = bodyX + padX + holeCol / 2
-  const rightCx = bodyX + padX + holeCol + photoW + holeCol / 2
+  // photo windows + per-frame rotated number labels
+  let cursorY = barTop
+  const framePositions: { x: number; y: number; num: number }[] = []
+  for (let i = 0; i < FRAME_COUNT; i++) {
+    framePositions.push({ x: sideGutter, y: cursorY, num: i + 1 })
+    cursorY += photoSize + barBetween
+  }
+
+  framePositions.forEach(({ x, y, num }, i) => {
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(x, y, photoSize, photoSize)
+    ctx.clip()
+    // cover-fit the square capture into the square window (they already match,
+    // but this keeps things correct if a capture ever isn't perfectly square)
+    ctx.drawImage(images[i], x, y, photoSize, photoSize)
+    ctx.restore()
+
+    // thin inner seam so each frame reads as a distinct pane
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)'
+    ctx.lineWidth = 2
+    ctx.strokeRect(x + 1, y + 1, photoSize - 2, photoSize - 2)
+
+    // rotated frame number in each side gutter, centered on this frame
+    const labelY = y + photoSize / 2
+    ;[x - 24, x + photoSize + 24].forEach((labelX) => {
+      ctx.save()
+      ctx.translate(labelX, labelY)
+      ctx.rotate(-Math.PI / 2)
+      ctx.fillStyle = numberColor
+      ctx.font = '22px "Special Elite", monospace'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(String(num), 0, 0)
+      ctx.restore()
+    })
+  })
+
+  // continuous sprocket-hole perforations down both edges, independent of frame lines
   for (let side = 0; side < 2; side++) {
-    const cx = side === 0 ? leftCx : rightCx
-    for (let y = 56; y < bodyH - footerH + 20; y += holeSpacing) {
-      ctx.beginPath()
-      ctx.arc(cx, y, holeR, 0, Math.PI * 2)
-      ctx.fillStyle = 'rgba(0,0,0,0)'
-      ctx.globalCompositeOperation = 'destination-out'
-      ctx.fill()
-      ctx.globalCompositeOperation = 'source-over'
+    const cx = side === 0 ? holeEdgeInset : stripW - holeEdgeInset
+    for (let y = holePitch / 2; y < stripH - 14; y += holePitch) {
+      punchRoundRect(ctx, cx - holeW / 2, y - holeH / 2, holeW, holeH, holeRadius)
     }
   }
 
-  // photos
-  images.forEach((img, i) => {
-    const x = bodyX + padX + holeCol
-    const y = padY + i * (photoH + gap)
-    ctx.save()
-    roundRectPath(ctx, x, y, photoW, photoH, 14)
-    ctx.clip()
-    ctx.drawImage(img, x, y, photoW, photoH)
-    ctx.restore()
-    ctx.lineWidth = 5
-    ctx.strokeStyle = ink
-    roundRectPath(ctx, x, y, photoW, photoH, 14)
-    ctx.stroke()
-  })
-
-  // footer caption
-  ctx.fillStyle = ink
-  ctx.font = '56px "Abril Fatface", serif'
+  // bottom leader stamp
+  ctx.fillStyle = numberColor
+  ctx.font = '18px "Abril Fatface", serif'
   ctx.textAlign = 'center'
-  ctx.fillText('Filmin', W / 2, bodyH - footerH + 62)
-  ctx.font = '28px "Special Elite", monospace'
-  ctx.fillStyle = ink
-  ctx.globalAlpha = 0.75
+  ctx.textBaseline = 'alphabetic'
+  ctx.fillText('Filmin', stripW / 2, stripH - 30)
+  ctx.font = '10px "Special Elite", monospace'
+  ctx.globalAlpha = 0.85
   const dateStr = new Date().toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   })
-  ctx.fillText(`${filter === 'sepia' ? 'SEPIA STRIP' : 'B&W STRIP'} · ${dateStr}`, W / 2, bodyH - footerH + 112)
+  ctx.fillText(`${filter === 'sepia' ? 'SEPIA' : 'B&W'} \u00b7 ${dateStr}`, stripW / 2, stripH - 14)
   ctx.globalAlpha = 1
 
   return canvas.toDataURL('image/png')

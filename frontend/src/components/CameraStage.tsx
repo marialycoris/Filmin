@@ -63,7 +63,7 @@ export default function CameraStage({ filter, onComplete, onCancel }: Props) {
         <div className="absolute bottom-3 left-3 w-5 h-5 border-b-4 border-l-4 border-mustard rounded-bl-md z-20" />
         <div className="absolute bottom-3 right-3 w-5 h-5 border-b-4 border-r-4 border-mustard rounded-br-md z-20" />
 
-        <div className="relative aspect-[4/3] w-full bg-black">
+        <div className="relative aspect-square w-full bg-black">
           {status === 'ready' && (
             <video
               ref={videoRef}
